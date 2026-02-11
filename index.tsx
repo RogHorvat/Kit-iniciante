@@ -1,0 +1,340 @@
+import React, { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Instagram, Facebook, Twitter, Linkedin, Github, Send, Mail, Phone, User, MessageSquare, Download, FileText, Gamepad2, Map, Shield, Sword, Scroll, CheckCircle, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import emailjs from '@emailjs/browser';
+
+// =========================================================
+// CONFIGURAÇÕES DO EMAILJS (JÁ CONFIGURADO!)
+// =========================================================
+const EMAILJS_SERVICE_ID: string = "service_rh1ougl";
+const EMAILJS_TEMPLATE_ID: string = "template_2165vw5";
+const EMAILJS_PUBLIC_KEY: string = "LAwMgLmFx_CiZBsFB";
+
+// =========================================================
+// CONFIGURAÇÃO DA PLANILHA (OPCIONAL - Para salvar os dados)
+// =========================================================
+// Para salvar numa planilha do Google automaticamente:
+// 1. Entre em https://sheetmonkey.io/
+// 2. Faça login, crie um novo formulário e copie o "Form Action URL".
+// 3. Cole o link abaixo, dentro das aspas.
+// Se deixar vazio (""), ele só manda o email e não salva na planilha.
+const SHEET_DB_URL: string = ""; // Ex: "https://api.sheetmonkey.io/form/..."
+// =========================================================
+
+// Custom D20 Icon Component for background decoration
+const D20Icon = ({ size = 60, stroke = "#D64585", className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" stroke={stroke} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {/* Outer Hexagon */}
+    <path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z" />
+    {/* Center Lines */}
+    <path d="M50 5 L50 50" />
+    <path d="M90 25 L50 50" />
+    <path d="M90 75 L50 50" />
+    <path d="M50 95 L50 50" />
+    <path d="M10 75 L50 50" />
+    <path d="M10 25 L50 50" />
+    {/* Inner Triangle effect for depth */}
+    <path d="M10 25 L90 25 L50 95 Z" opacity="0.5" />
+  </svg>
+);
+
+const App = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: ''
+  });
+
+  const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+
+    try {
+      // 1. Envia o e-mail (EmailJS)
+      // Adicionamos 'email' e 'to_email' para garantir compatibilidade com o template
+      const emailPromise = emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          to_name: formData.name,   
+          to_email: formData.email, // Padrão comum
+          email: formData.email,    // Específico para sua configuração {{email}}
+          phone: formData.phone,
+          reply_to: formData.email
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+
+      // 2. Salva na Planilha (Se o link estiver configurado)
+      let sheetPromise: Promise<any> = Promise.resolve();
+      if (SHEET_DB_URL && SHEET_DB_URL.startsWith("http")) {
+        sheetPromise = fetch(SHEET_DB_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...formData,
+            created_at: new Date().toLocaleString('pt-BR') // Adiciona data e hora
+          }),
+        });
+      }
+
+      // Aguarda ambos terminarem
+      await Promise.all([emailPromise, sheetPromise]);
+      
+      console.log('Form Submitted Successfully:', formData);
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Failed to send data:", error);
+      alert("Houve um pequeno problema ao convocar os corvos. Verifique sua conexão e tente novamente.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleReset = () => {
+    setSubmitted(false);
+    setFormData({ name: '', email: '', phone: '' });
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    // Fallback to a placeholder if the local image fails to load
+    e.currentTarget.src = 'https://via.placeholder.com/100?text=?';
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FB8CBF] bg-grid-pattern relative overflow-hidden flex items-center justify-center p-4">
+      
+      {/* RPG Background Elements */}
+      <div className="absolute top-10 left-10 opacity-30 animate-float pointer-events-none">
+        <D20Icon size={80} stroke="#9D174D" />
+      </div>
+      
+      <div className="absolute top-20 right-20 opacity-30 animate-float-delayed pointer-events-none">
+        <Shield size={70} color="#9D174D" strokeWidth={1.5} />
+      </div>
+
+      <div className="absolute bottom-20 left-20 opacity-30 animate-float-delayed pointer-events-none">
+        <Scroll size={60} color="#9D174D" strokeWidth={1.5} />
+      </div>
+
+      <div className="absolute bottom-10 right-10 opacity-30 animate-float pointer-events-none">
+         <D20Icon size={100} stroke="#9D174D" className="rotate-12" />
+      </div>
+
+      {/* Main Card - Parchment Style */}
+      <div className="bg-[#FFFAF0] w-full max-w-2xl border-[4px] border-[#2D1B2E] shadow-[8px_8px_0px_0px_rgba(45,27,46,1)] p-6 sm:p-8 relative z-10 my-4 rounded-sm transition-all duration-500">
+        
+        {/* Decorative Corner Rivets */}
+        <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-[#2D1B2E] opacity-50"></div>
+        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#2D1B2E] opacity-50"></div>
+        <div className="absolute bottom-2 left-2 w-2 h-2 rounded-full bg-[#2D1B2E] opacity-50"></div>
+        <div className="absolute bottom-2 right-2 w-2 h-2 rounded-full bg-[#2D1B2E] opacity-50"></div>
+
+        {!submitted ? (
+          <>
+            {/* Header Section */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="flex flex-col items-center text-center w-full mb-6 gap-2">
+                <h1 className="text-2xl md:text-3xl font-rpg text-[#2D1B2E] tracking-tight whitespace-normal sm:whitespace-nowrap drop-shadow-sm font-bold leading-tight">
+                  Pronto para começar sua aventura?
+                </h1>
+                <h2 className="text-xl md:text-2xl font-rpg text-[#D64585] whitespace-normal sm:whitespace-nowrap font-bold leading-tight">
+                  Baixe o Kit Iniciante de Teatro-RPG
+                </h2>
+              </div>
+
+              {/* Benefits Box - Stat Block Style */}
+              <div className="w-full bg-[#FDF2D0] border-[3px] border-[#2D1B2E] p-5 shadow-[4px_4px_0px_0px_rgba(45,27,46,0.3)] transform rotate-1 hover:rotate-0 transition-transform duration-300 mt-2 relative">
+                 {/* "Paper" texture effect overlay if desired, staying simple for now */}
+                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#2D1B2E] text-[#FDF2D0] px-4 py-1 text-xs font-bold uppercase tracking-widest font-rpg rounded-sm">
+                    Inventário do Kit
+                 </div>
+                 
+                 <ul className="space-y-4 mt-2">
+                    <li className="flex items-start gap-3">
+                       <div className="bg-[#FF9DE2] border-2 border-[#2D1B2E] p-1 shadow-[2px_2px_0px_0px_rgba(45,27,46,1)] shrink-0 mt-1">
+                          <FileText size={18} className="text-[#2D1B2E]" />
+                       </div>
+                       <p className="text-sm leading-snug text-[#2D1B2E]">
+                          <span className="font-bold block text-base mb-0.5 font-rpg">Ficha de Personagem Exclusiva:</span>
+                          Um modelo simples para organizar ideias, habilidades e até os medos dos personagens.
+                       </p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                       <div className="bg-[#6BC5FF] border-2 border-[#2D1B2E] p-1 shadow-[2px_2px_0px_0px_rgba(45,27,46,1)] shrink-0 mt-1">
+                          <Gamepad2 size={18} className="text-[#2D1B2E]" />
+                       </div>
+                       <p className="text-sm leading-snug text-[#2D1B2E]">
+                          <span className="font-bold block text-base mb-0.5 font-rpg">Guia de 2 Jogos Práticos:</span>
+                          Instruções para as dinâmicas que treinam foco, prontidão e aquecem para o jogo.
+                       </p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                       <div className="bg-[#FFB86B] border-2 border-[#2D1B2E] p-1 shadow-[2px_2px_0px_0px_rgba(45,27,46,1)] shrink-0 mt-1">
+                           <Map size={18} className="text-[#2D1B2E]" />
+                       </div>
+                       <p className="text-sm leading-snug text-[#2D1B2E]">
+                          <span className="font-bold block text-base mb-0.5 font-rpg">Uma Aventura Base:</span>
+                          Um pequeno mundo para criar sua aventura a partir dele.
+                       </p>
+                    </li>
+                 </ul>
+              </div>
+            </div>
+
+            <hr className="border-t-2 border-[#2D1B2E] mb-8 border-dashed opacity-50" />
+
+            {/* Form Section */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label htmlFor="name" className="block text-[#2D1B2E] font-bold mb-1 ml-1 text-sm uppercase tracking-wider font-rpg">
+                    Nome do Jogador <span className="text-[#D64585]">*</span>
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      id="name"
+                      name="name"
+                      required
+                      value={formData.name}
+                      onChange={handleChange}
+                      disabled={isSending}
+                      className="w-full bg-white border-[2px] border-[#2D1B2E] p-3 focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(214,69,133,1)] transition-all placeholder:text-gray-400 font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                      placeholder="Seu nome completo"
+                    />
+                    <User className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={20} />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-[#2D1B2E] font-bold mb-1 ml-1 text-sm uppercase tracking-wider font-rpg">
+                    Pergaminho de Contato (E-mail) <span className="text-[#D64585]">*</span>
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="email" 
+                      id="email"
+                      name="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      disabled={isSending}
+                      className="w-full bg-white border-[2px] border-[#2D1B2E] p-3 focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(214,69,133,1)] transition-all placeholder:text-gray-400 font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                      placeholder="exemplo@email.com"
+                    />
+                    <Mail className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={20} />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-[#2D1B2E] font-bold mb-1 ml-1 text-sm uppercase tracking-wider font-rpg">Telefone (Opcional)</label>
+                  <div className="relative">
+                    <input 
+                      type="tel" 
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      disabled={isSending}
+                      className="w-full bg-white border-[2px] border-[#2D1B2E] p-3 focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(214,69,133,1)] transition-all placeholder:text-gray-400 font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                      placeholder="(00) 00000-0000"
+                    />
+                    <Phone className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={20} />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={isSending}
+                  className={`w-full bg-[#2D1B2E] text-white font-bold text-lg py-4 border-[2px] border-[#2D1B2E] shadow-[6px_6px_0px_0px_#FF9DE2] hover:shadow-[2px_2px_0px_0px_#FF9DE2] hover:translate-y-1 hover:translate-x-1 transition-all flex items-center justify-center gap-2 font-rpg tracking-wider disabled:opacity-80 disabled:cursor-wait ${isSending ? 'translate-y-1 translate-x-1 shadow-none' : ''}`}
+                >
+                  {isSending ? (
+                    <>
+                      Enviando Corvos...
+                      <Loader2 className="animate-spin" size={20} />
+                    </>
+                  ) : (
+                    <>
+                      Iniciar Aventura (Baixar)
+                      <Download size={20} />
+                    </>
+                  )}
+                </button>
+            </form>
+
+            {/* Action Buttons */}
+            <div className="flex justify-between gap-2 mt-8">
+                <a 
+                  href="https://ig.me/m/rogeriohorvat" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-[#6BC5FF] border-[2px] border-[#2D1B2E] shadow-[3px_3px_0px_0px_rgba(45,27,46,1)] py-2 px-1 flex items-center justify-center gap-2 font-bold active:translate-y-1 active:shadow-none transition-all hover:bg-[#4db8ff] text-[#2D1B2E] no-underline font-rpg"
+                >
+                   <span>Enviar Msg (Direct)</span> <MessageSquare size={18} />
+                </a>
+                <a 
+                  href="mailto:rogerio.produtorteatral@gmail.com"
+                  className="flex-1 bg-[#FFB86B] border-[2px] border-[#2D1B2E] shadow-[3px_3px_0px_0px_rgba(45,27,46,1)] py-2 px-1 flex items-center justify-center gap-2 font-bold active:translate-y-1 active:shadow-none transition-all hover:bg-[#ffa64d] text-[#2D1B2E] no-underline font-rpg"
+                >
+                   <span>Enviar Corvo (E-mail)</span> <Mail size={18} />
+                </a>
+            </div>
+          </>
+        ) : (
+          /* Success Screen */
+          <div className="flex flex-col items-center text-center animate-pulse-slow py-8 px-4">
+             <div className="mb-6 relative">
+               <div className="absolute inset-0 blur-xl opacity-50 rounded-full bg-green-200"></div>
+               <CheckCircle size={80} className="text-green-600 relative z-10" strokeWidth={1.5} />
+             </div>
+             
+             <h2 className="text-3xl md:text-4xl font-rpg text-[#2D1B2E] font-bold mb-8 leading-tight">
+               Sua aventura já vai começar!
+             </h2>
+
+             <div className="bg-[#FDF2D0] border-2 border-[#2D1B2E] p-6 mb-8 shadow-[4px_4px_0px_0px_rgba(45,27,46,0.2)] w-full relative">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#2D1B2E] text-white px-3 py-1 text-xs font-bold uppercase tracking-widest font-rpg rounded-sm">
+                  Missão Aceita
+                </div>
+                <p className="text-[#2D1B2E] text-lg leading-relaxed">
+                  Seu <span className="font-bold font-rpg text-[#D64585]">Kit do Aventureiro Iniciante</span> já está a caminho do seu e-mail.
+                  <br/><br/>
+                  Em alguns minutos você receberá o material com a ficha, os jogos e a aventura base para começar.
+                  <br/>
+                  <span className="text-sm text-gray-600 mt-2 block font-bold">(Confere o Spam também! 😉)</span>
+                </p>
+             </div>
+
+             <div className="text-[#2D1B2E] text-xl font-rpg italic max-w-md mx-auto leading-relaxed opacity-90 mb-8">
+               Enquanto isso, prepare a imaginação…
+               <br/>
+               Porque "toda grande história começa com um primeiro passo." 🎭🎲
+             </div>
+
+             <button 
+              onClick={handleReset}
+              className="bg-[#2D1B2E] text-white font-bold py-3 px-6 border-[2px] border-[#2D1B2E] shadow-[4px_4px_0px_0px_#FF9DE2] hover:shadow-[2px_2px_0px_0px_#FF9DE2] hover:translate-y-1 hover:translate-x-1 transition-all flex items-center justify-center gap-2 font-rpg tracking-wider mx-auto text-sm"
+            >
+              <ArrowLeft size={18} />
+              Voltar (Nova Aventura)
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const container = document.getElementById('root');
+const root = createRoot(container!);
+root.render(<App />);
